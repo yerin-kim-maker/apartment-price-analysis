@@ -1,0 +1,10 @@
+requests>=2.31
+pandas>=2.0
+pyarrow>=14.0
+python-dotenv>=1.0
+streamlit>=1.35
+plotly>=5.20
+pydeck>=0.9
+pyshp>=2.3
+shapely>=2.1
+pyproj>=3.8
