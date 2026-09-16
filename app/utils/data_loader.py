@@ -4,6 +4,7 @@ import datetime
 from pathlib import Path
 
 import pandas as pd
+import requests
 import streamlit as st
 
 from utils.name_match import best_match, normalize_name
@@ -17,6 +18,28 @@ SCHOOL_ASSIGNMENT_PATH = PROCESSED_DIR / "school_assignment.parquet"
 COMPLEX_COORDS_PATH = PROCESSED_DIR / "complex_coords.parquet"
 COMPLEX_SUBWAY_PATH = PROCESSED_DIR / "complex_subway.parquet"
 ANALYSIS_DATASET_PATH = PROCESSED_DIR / "analysis_dataset.parquet"
+
+# 배포 환경(Streamlit Community Cloud 등)은 Git LFS를 지원하지 않아 100MB 넘는 이 파일을
+# 저장소에 그냥 커밋해두면 포인터 텍스트만 받아진다. 대신 GitHub Release 첨부파일로 올려두고
+# 앱 구동 시 없으면(또는 포인터처럼 너무 작으면) 직접 내려받는다.
+ANALYSIS_DATASET_URL = (
+    "https://github.com/yerin-kim-maker/apartment-price-analysis/releases/download/"
+    "data-v1/analysis_dataset.parquet"
+)
+_MIN_VALID_DATASET_BYTES = 10 * 1024 * 1024  # 실제 파일(백여MB)보다 훨씬 작지만 LFS 포인터(수백바이트)는 확실히 걸러내는 기준
+
+
+def _ensure_analysis_dataset() -> None:
+    if ANALYSIS_DATASET_PATH.exists() and ANALYSIS_DATASET_PATH.stat().st_size >= _MIN_VALID_DATASET_BYTES:
+        return
+    ANALYSIS_DATASET_PATH.parent.mkdir(parents=True, exist_ok=True)
+    resp = requests.get(ANALYSIS_DATASET_URL, stream=True, timeout=180)
+    resp.raise_for_status()
+    tmp_path = ANALYSIS_DATASET_PATH.with_suffix(".downloading")
+    with open(tmp_path, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=1024 * 1024):
+            f.write(chunk)
+    tmp_path.replace(ANALYSIS_DATASET_PATH)
 
 PYEONG = 3.3058
 
@@ -587,6 +610,7 @@ def _compute_transactions_enriched() -> pd.DataFrame:
 def load_transactions_enriched() -> pd.DataFrame:
     """analysis_dataset.parquet(미리 계산해둔 결합 결과)가 있으면 그냥 읽어서 바로 반환하고,
     없으면(아직 한 번도 build_dataset.py를 안 돌렸으면) 그 자리에서 직접 계산한다."""
+    _ensure_analysis_dataset()
     if ANALYSIS_DATASET_PATH.exists():
         return pd.read_parquet(ANALYSIS_DATASET_PATH)
     return _compute_transactions_enriched()
