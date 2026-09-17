@@ -443,9 +443,10 @@ with tab_underval:
                         "배정초등학교", "초등학교도보(분)", "배정중학군", "거래유동성", "가격모멘텀(%)", "거래건수",
                     ]
                 ].copy()
-                display["최근접역"] = display["최근접역"].fillna("정보없음")
-                display["배정초등학교"] = display["배정초등학교"].fillna("정보없음")
-                display["배정중학군"] = display["배정중학군"].fillna("정보없음")
+                # category dtype 컬럼은 목록에 없는 값으로 그냥 fillna를 못 하니 object로 바꾸고 채운다.
+                display["최근접역"] = display["최근접역"].astype("object").fillna("정보없음")
+                display["배정초등학교"] = display["배정초등학교"].astype("object").fillna("정보없음")
+                display["배정중학군"] = display["배정중학군"].astype("object").fillna("정보없음")
 
                 st.subheader("전체 리스트")
                 search_term = st.text_input("단지 검색", placeholder="단지명으로 검색...")
@@ -850,9 +851,9 @@ with tab_school:
                 "middle_schools": "중학군",
             }
         )
-        table["배정초등학교"] = table["배정초등학교"].fillna("정보없음")
-        table["중학군"] = table["중학군"].fillna("정보없음")
-        table["매칭방식"] = table["매칭방식"].fillna("-")
+        table["배정초등학교"] = table["배정초등학교"].astype("object").fillna("정보없음")
+        table["중학군"] = table["중학군"].astype("object").fillna("정보없음")
+        table["매칭방식"] = table["매칭방식"].astype("object").fillna("-")
         st.dataframe(table.sort_values("단지명"), use_container_width=True, hide_index=True)
         st.caption(
             "매칭방식 '단일배정'은 통학구역 폴리곤으로 확정된 경우, '최단거리추정'은 통학구역 밖이라 "
